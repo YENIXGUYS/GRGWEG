@@ -1,0 +1,60 @@
+local DGO_GR1 = ""
+local DGK_FEE2 = ""
+local startTime = tick()
+
+local function kickout(reason)
+    if typeof(reason) == "string" then
+        game.Players.LocalPlayer:Kick(reason)
+    end
+end
+
+if getgenv().DGO_GR then
+    DGO_GR1 = getgenv().DGO_GR
+end
+
+if getgenv().DGK_FEE then
+    DGK_FEE2 = getgenv().DGK_FEE
+end
+
+
+
+local url = "http://localhost/whitelistyenix/index.php?SecretKeys=" .. DGO_GR1 .. "&HardwareID=" .. DGK_FEE2
+local request = http_request or request or syn.request
+
+local response = request({ Url = url, Method = "GET" })
+if not response or not response.Body then
+    game:GetService("StarterGui"):SetCore("SendNotification",{
+        Title = "Failed to Connect to Server",
+        Text = "", 
+        Icon = "" 
+    })
+    return
+end
+
+local Server = response.Body
+print("Server response:", Server)
+
+local fwf = {
+    ["Invalid key"] = "Invalid key provided.",
+    ["Hwid Found"] = "HWID already in use. Access denied.",
+    ["Complete"] = "Whitelist Complete",
+    ["Hwid Changed"] = "HWID updated successfully.",
+}
+
+task.spawn(function()
+    if string.find(Server, "Invalid key") then
+        kickout(fwf["Invalid key."])
+    elseif string.find(Server, "Hwid Found") then
+        kickout("Hwid is Used")
+    elseif string.find(Server, "Complete") or string.find(Server, "Hwid Changed") then
+        print(fwf["Complete"])
+        print("Time taken: " .. (tick() - startTime) .. " seconds")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/YENIXGUYS/yonex/refs/heads/main/BIG"))()
+    elseif string.find(Server, "Error updating HWID:") then
+        kickout("The system encountered an error. Please report to the admin.")
+    elseif string.find(Server, "Server down waiting service man to fix") then
+        kickout("The server is down. Please wait Adam to fix it.")
+    else
+        kickout("Unknown response from the server. Received: " .. Server)
+    end
+end)
